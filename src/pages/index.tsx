@@ -2,6 +2,7 @@ import { signIn, signOut } from "next-auth/react";
 import { useAuth } from "../hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
 
 export default function Home() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -28,9 +29,11 @@ export default function Home() {
               </p>
               <div className="flex items-center justify-center space-x-4">
                 {user?.image && (
-                  <img
+                  <Image
                     src={user.image}
                     alt={user.name || "User"}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full"
                   />
                 )}

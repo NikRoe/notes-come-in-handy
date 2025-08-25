@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Ensure content detection works for Tailwind v4 */
+@source "src/**/*.{js,ts,jsx,tsx}";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
