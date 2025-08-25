@@ -15,7 +15,7 @@ This roadmap outlines the development process for a multi-device note-taking app
 
 - ✅Create note model/schema (id, title, content, createdAt, updatedAt, userId)
 - ✅ Build CRUD API endpoints for notes
-- Implement basic note list and detail views
+- ✅ Implement basic note list and detail views
 - Add markdown editor component (react-markdown + editor)
 
 ## **Phase 2: User Experience & Polish (2 weeks)**

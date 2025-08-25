@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 /* Ensure content detection works for Tailwind v4 */
 @source "src/**/*.{js,ts,jsx,tsx}";

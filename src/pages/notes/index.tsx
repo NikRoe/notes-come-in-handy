@@ -10,10 +10,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import useSWR, { mutate } from "swr";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
 
 interface Note {
   id: string;
@@ -120,13 +120,13 @@ export default function NotesPage() {
                     setNewNote((prev) => ({ ...prev, title: e.target.value }))
                   }
                 />
-                <Textarea
-                  placeholder="Note content"
+                <MarkdownEditor
                   value={newNote.content}
-                  onChange={(e) =>
-                    setNewNote((prev) => ({ ...prev, content: e.target.value }))
+                  onChange={(content) =>
+                    setNewNote((prev) => ({ ...prev, content }))
                   }
-                  rows={6}
+                  placeholder="Write your note in Markdown..."
+                  rows={12}
                 />
                 <Button onClick={createNote} className="w-full ">
                   Create Note
@@ -156,7 +156,7 @@ export default function NotesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground line-clamp-3 mb-4">
-                    {note.content}
+                    {note.content.replace(/[#*_~`]/g, '').substring(0, 150)}...
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">

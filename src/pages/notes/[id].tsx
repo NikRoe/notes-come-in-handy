@@ -3,10 +3,12 @@ import { useAuth } from '../../hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/router'
 import useSWR, { mutate } from 'swr'
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { MarkdownEditor } from '@/components/MarkdownEditor'
 
 interface Note {
   id: string
@@ -147,16 +149,17 @@ export default function NotePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {isEditing ? (
-              <Textarea
+              <MarkdownEditor
                 value={editedNote.content}
-                onChange={(e) => setEditedNote(prev => ({ ...prev, content: e.target.value }))}
+                onChange={(content) => setEditedNote(prev => ({ ...prev, content }))}
+                placeholder="Edit your note in Markdown..."
                 rows={20}
-                className="min-h-96"
-                placeholder="Note content"
               />
             ) : (
-              <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 bg-muted/20 p-4 rounded-md border">
-                {note.content}
+              <div className="text-gray-900 dark:text-gray-100 bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {note.content}
+                </ReactMarkdown>
               </div>
             )}
             <div className="text-sm text-muted-foreground border-t pt-4">
