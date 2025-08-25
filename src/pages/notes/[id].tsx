@@ -155,7 +155,7 @@ export default function NotePage() {
                 placeholder="Note content"
               />
             ) : (
-              <div className="whitespace-pre-wrap text-foreground">
+              <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 bg-muted/20 p-4 rounded-md border">
                 {note.content}
               </div>
             )}
