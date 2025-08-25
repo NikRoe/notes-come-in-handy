@@ -2,6 +2,8 @@ import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth/next'
 import { getProviders, signIn } from 'next-auth/react'
 import { authOptions } from '../../lib/auth'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface SignInProps {
   providers: any
@@ -9,26 +11,24 @@ interface SignInProps {
 
 export default function SignIn({ providers }: SignInProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to Notes
-          </h2>
-        </div>
-        <div className="mt-8 space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Sign in to Notes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {Object.values(providers).map((provider: any) => (
-            <div key={provider.name}>
-              <button
-                onClick={() => signIn(provider.id)}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Sign in with {provider.name}
-              </button>
-            </div>
+            <Button
+              key={provider.name}
+              onClick={() => signIn(provider.id)}
+              className="w-full"
+              variant="default"
+            >
+              Sign in with {provider.name}
+            </Button>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

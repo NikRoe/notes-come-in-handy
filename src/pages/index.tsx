@@ -1,5 +1,7 @@
 import { signIn, signOut } from "next-auth/react";
 import { useAuth } from "../hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -13,15 +15,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 text-center">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Notes App
-          </h1>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl">Notes App</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {isAuthenticated ? (
-            <div className="space-y-4">
-              <p className="text-lg text-gray-700">
+            <div className="space-y-4 text-center">
+              <p className="text-lg text-muted-foreground">
                 Welcome back, {user?.name}!
               </p>
               <div className="flex items-center justify-center space-x-4">
@@ -32,30 +34,31 @@ export default function Home() {
                     className="w-10 h-10 rounded-full"
                   />
                 )}
-                <span className="text-gray-600">{user?.email}</span>
+                <span className="text-sm text-muted-foreground">{user?.email}</span>
               </div>
-              <button
-                onClick={() => signOut()}
-                className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              <Button 
+                onClick={() => signOut()} 
+                variant="destructive"
+                className="w-full"
               >
                 Sign Out
-              </button>
+              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <p className="text-lg text-gray-700">
+            <div className="space-y-4 text-center">
+              <p className="text-lg text-muted-foreground">
                 Sign in to access your notes
               </p>
-              <button
-                onClick={() => signIn()}
-                className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              <Button 
+                onClick={() => signIn()} 
+                className="w-full"
               >
                 Sign In
-              </button>
+              </Button>
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
