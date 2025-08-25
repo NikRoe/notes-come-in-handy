@@ -106,13 +106,13 @@ export default function NotesPage() {
           <h1 className="text-3xl font-bold">My Notes</h1>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="">New Note</Button>
+              <Button variant="outline">New Note</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Note</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col">
                 <Input
                   placeholder="Note title"
                   value={newNote.title}
@@ -128,7 +128,11 @@ export default function NotesPage() {
                   placeholder="Write your note in Markdown..."
                   rows={12}
                 />
-                <Button onClick={createNote} className="w-full ">
+                <Button
+                  onClick={createNote}
+                  variant="outline"
+                  className="self-center"
+                >
                   Create Note
                 </Button>
               </div>
@@ -156,7 +160,7 @@ export default function NotesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground line-clamp-3 mb-4">
-                    {note.content.replace(/[#*_~`]/g, '').substring(0, 150)}...
+                    {note.content.replace(/[#*_~`]/g, "").substring(0, 150)}...
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">

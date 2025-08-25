@@ -1,94 +1,94 @@
-import { useState } from 'react'
-import { useAuth } from '../../hooks/useAuth'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { useRouter } from 'next/router'
-import useSWR, { mutate } from 'swr'
-import Link from 'next/link'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { MarkdownEditor } from '@/components/MarkdownEditor'
+import { useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/router";
+import useSWR, { mutate } from "swr";
+import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
 
 interface Note {
-  id: string
-  title: string
-  content: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json())
+const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
 export default function NotePage() {
-  const { isLoading, isAuthenticated } = useAuth()
-  const router = useRouter()
-  const { id } = router.query
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedNote, setEditedNote] = useState({ title: '', content: '' })
+  const { isLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { id } = router.query;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedNote, setEditedNote] = useState({ title: "", content: "" });
 
   const { data: note, error } = useSWR<Note>(
     isAuthenticated && id ? `/api/notes/${id}` : null,
     fetcher
-  )
+  );
 
   if (!isLoading && !isAuthenticated) {
-    router.push('/')
-    return null
+    router.push("/");
+    return null;
   }
 
   const startEditing = () => {
     if (note) {
-      setEditedNote({ title: note.title, content: note.content })
-      setIsEditing(true)
+      setEditedNote({ title: note.title, content: note.content });
+      setIsEditing(true);
     }
-  }
+  };
 
   const saveNote = async () => {
-    if (!editedNote.title.trim() || !editedNote.content.trim()) return
+    if (!editedNote.title.trim() || !editedNote.content.trim()) return;
 
     try {
       const response = await fetch(`/api/notes/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editedNote),
-      })
+      });
 
       if (response.ok) {
-        const updatedNote = await response.json()
+        const updatedNote = await response.json();
         // Update the cache
-        mutate(`/api/notes/${id}`, updatedNote, false)
+        mutate(`/api/notes/${id}`, updatedNote, false);
         // Also update the notes list cache
-        mutate('/api/notes')
-        setIsEditing(false)
+        mutate("/api/notes");
+        setIsEditing(false);
       }
     } catch (error) {
-      console.error('Failed to update note:', error)
+      console.error("Failed to update note:", error);
     }
-  }
+  };
 
   const deleteNote = async () => {
     try {
       const response = await fetch(`/api/notes/${id}`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
 
       if (response.ok) {
         // Update the notes list cache
-        mutate('/api/notes')
-        router.push('/notes')
+        mutate("/api/notes");
+        router.push("/notes");
       }
     } catch (error) {
-      console.error('Failed to delete note:', error)
+      console.error("Failed to delete note:", error);
     }
-  }
+  };
 
   if (isLoading || (isAuthenticated && !note && !error)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>
-    )
+    );
   }
 
   if (error || !note) {
@@ -103,7 +103,7 @@ export default function NotePage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -119,7 +119,9 @@ export default function NotePage() {
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   Cancel
                 </Button>
-                <Button onClick={saveNote}>Save</Button>
+                <Button variant="outline" onClick={saveNote}>
+                  Save
+                </Button>
               </>
             ) : (
               <>
@@ -139,7 +141,9 @@ export default function NotePage() {
             {isEditing ? (
               <Input
                 value={editedNote.title}
-                onChange={(e) => setEditedNote(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setEditedNote((prev) => ({ ...prev, title: e.target.value }))
+                }
                 className="text-2xl font-bold border-none p-0 focus-visible:ring-0"
                 placeholder="Note title"
               />
@@ -151,7 +155,9 @@ export default function NotePage() {
             {isEditing ? (
               <MarkdownEditor
                 value={editedNote.content}
-                onChange={(content) => setEditedNote(prev => ({ ...prev, content }))}
+                onChange={(content) =>
+                  setEditedNote((prev) => ({ ...prev, content }))
+                }
                 placeholder="Edit your note in Markdown..."
                 rows={20}
               />
@@ -170,5 +176,5 @@ export default function NotePage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
