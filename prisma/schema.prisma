@@ -55,6 +55,7 @@ model User {
   accounts Account[]
   sessions Session[]
   notes    Note[]
+  tags     Tag[]
 
   @@map("users")
 }
@@ -77,6 +78,32 @@ model Note {
   userId    String
   
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags      NoteTag[]
   
   @@map("notes")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#3B82F6")
+  createdAt DateTime @default(now())
+  userId    String
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes     NoteTag[]
+  
+  @@unique([name, userId])
+  @@map("tags")
+}
+
+model NoteTag {
+  noteId String
+  tagId  String
+  
+  note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([noteId, tagId])
+  @@map("note_tags")
 }

@@ -9,6 +9,8 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
+import { TagInput } from "@/components/TagInput";
+import { Tag } from "@/components/Tag";
 
 interface Note {
   id: string;
@@ -16,6 +18,13 @@ interface Note {
   content: string;
   createdAt: string;
   updatedAt: string;
+  tags: {
+    tag: {
+      id: string;
+      name: string;
+      color: string;
+    };
+  }[];
 }
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
@@ -25,7 +34,7 @@ export default function NotePage() {
   const router = useRouter();
   const { id } = router.query;
   const [isEditing, setIsEditing] = useState(false);
-  const [editedNote, setEditedNote] = useState({ title: "", content: "" });
+  const [editedNote, setEditedNote] = useState({ title: "", content: "", tags: [] as string[] });
 
   const { data: note, error } = useSWR<Note>(
     isAuthenticated && id ? `/api/notes/${id}` : null,
@@ -39,7 +48,11 @@ export default function NotePage() {
 
   const startEditing = () => {
     if (note) {
-      setEditedNote({ title: note.title, content: note.content });
+      setEditedNote({ 
+        title: note.title, 
+        content: note.content,
+        tags: note.tags?.map(({ tag }) => tag.name) || []
+      });
       setIsEditing(true);
     }
   };
@@ -51,7 +64,11 @@ export default function NotePage() {
       const response = await fetch(`/api/notes/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editedNote),
+        body: JSON.stringify({
+          title: editedNote.title,
+          content: editedNote.content,
+          tagNames: editedNote.tags
+        }),
       });
 
       if (response.ok) {
@@ -153,19 +170,40 @@ export default function NotePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {isEditing ? (
-              <MarkdownEditor
-                value={editedNote.content}
-                onChange={(content) =>
-                  setEditedNote((prev) => ({ ...prev, content }))
-                }
-                placeholder="Edit your note in Markdown..."
-                rows={20}
-              />
+              <div className="space-y-4">
+                <MarkdownEditor
+                  value={editedNote.content}
+                  onChange={(content) =>
+                    setEditedNote((prev) => ({ ...prev, content }))
+                  }
+                  placeholder="Edit your note in Markdown..."
+                  rows={20}
+                />
+                <TagInput
+                  tags={editedNote.tags}
+                  onTagsChange={(tags) =>
+                    setEditedNote((prev) => ({ ...prev, tags }))
+                  }
+                  placeholder="Edit tags (press Enter to add)..."
+                />
+              </div>
             ) : (
-              <div className="text-gray-900 dark:text-gray-100 bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none dark:prose-invert">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {note.content}
-                </ReactMarkdown>
+              <div className="space-y-4">
+                <div className="text-gray-900 dark:text-gray-100 bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {note.content}
+                  </ReactMarkdown>
+                </div>
+                {note.tags && note.tags.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2 text-muted-foreground">Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {note.tags.map(({ tag }) => (
+                        <Tag key={tag.id} name={tag.name} color={tag.color} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="text-sm text-muted-foreground border-t pt-4">

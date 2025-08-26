@@ -15,6 +15,8 @@ import { useRouter } from "next/router";
 import useSWR, { mutate } from "swr";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { SearchBar } from "@/components/SearchBar";
+import { TagInput } from "@/components/TagInput";
+import { Tag } from "@/components/Tag";
 
 interface Note {
   id: string;
@@ -22,6 +24,13 @@ interface Note {
   content: string;
   createdAt: string;
   updatedAt: string;
+  tags: {
+    tag: {
+      id: string;
+      name: string;
+      color: string;
+    };
+  }[];
 }
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
@@ -30,7 +39,11 @@ export default function NotesPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newNote, setNewNote] = useState({ title: "", content: "" });
+  const [newNote, setNewNote] = useState({
+    title: "",
+    content: "",
+    tags: [] as string[],
+  });
   const [searchQuery, setSearchQuery] = useState("");
 
   const {
@@ -40,6 +53,7 @@ export default function NotesPage() {
   } = useSWR<Note[]>(isAuthenticated ? "/api/notes" : null, fetcher);
 
   const filteredNotes = useMemo(() => {
+    if (error || !Array.isArray(notes)) return [];
     if (!searchQuery.trim()) return notes;
 
     const query = searchQuery.toLowerCase();
@@ -48,12 +62,14 @@ export default function NotesPage() {
         note.title.toLowerCase().includes(query) ||
         note.content.toLowerCase().includes(query)
     );
-  }, [notes, searchQuery]);
+  }, [notes, searchQuery, error]);
 
   if (!isLoading && !isAuthenticated) {
     router.push("/");
     return null;
   }
+
+  console.log("notes", filteredNotes);
 
   function handleSearch(query: string) {
     setSearchQuery(query);
@@ -66,14 +82,18 @@ export default function NotesPage() {
       const response = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newNote),
+        body: JSON.stringify({
+          title: newNote.title,
+          content: newNote.content,
+          tagNames: newNote.tags,
+        }),
       });
 
       if (response.ok) {
         const createdNote = await response.json();
         // Optimistic update
         mutate("/api/notes", [createdNote, ...notes], false);
-        setNewNote({ title: "", content: "" });
+        setNewNote({ title: "", content: "", tags: [] });
         setIsDialogOpen(false);
         // Revalidate to ensure consistency
         mutate("/api/notes");
@@ -116,6 +136,19 @@ export default function NotesPage() {
     return null;
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardContent className="text-center py-12">
+            <p className="text-destructive mb-4">Failed to load notes</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
@@ -149,6 +182,13 @@ export default function NotesPage() {
                     }
                     placeholder="Write your note in Markdown..."
                     rows={12}
+                  />
+                  <TagInput
+                    tags={newNote.tags}
+                    onTagsChange={(tags) =>
+                      setNewNote((prev) => ({ ...prev, tags }))
+                    }
+                    placeholder="Add tags (press Enter to add)..."
                   />
                   <Button
                     onClick={createNote}
@@ -187,7 +227,7 @@ export default function NotesPage() {
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredNotes.map((note) => (
+            {filteredNotes?.map((note) => (
               <Card key={note.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-lg line-clamp-2">
@@ -198,6 +238,13 @@ export default function NotesPage() {
                   <p className="text-muted-foreground line-clamp-3 mb-4">
                     {note.content.replace(/[#*_~`]/g, "").substring(0, 150)}...
                   </p>
+                  {note.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {note.tags.map(({ tag }) => (
+                        <Tag key={tag.id} name={tag.name} color={tag.color} />
+                      ))}
+                    </div>
+                  )}
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <span className="text-sm text-muted-foreground">
                       {new Date(note.updatedAt).toLocaleDateString()}
