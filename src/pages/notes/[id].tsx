@@ -11,6 +11,7 @@ import remarkGfm from "remark-gfm";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { TagInput } from "@/components/TagInput";
 import { Tag } from "@/components/Tag";
+import { Header } from "@/components/Header";
 
 interface Note {
   id: string;
@@ -126,6 +127,8 @@ export default function NotePage() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
+        <Header title={note.title} className="mb-6" />
+        
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <Link href="/notes">
             <Button variant="outline" className="w-fit">← Back to Notes</Button>

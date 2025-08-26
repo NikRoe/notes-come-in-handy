@@ -17,6 +17,7 @@ import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { SearchBar } from "@/components/SearchBar";
 import { TagInput } from "@/components/TagInput";
 import { Tag } from "@/components/Tag";
+import { Header } from "@/components/Header";
 
 interface Note {
   id: string;
@@ -68,8 +69,6 @@ export default function NotesPage() {
     router.push("/");
     return null;
   }
-
-  console.log("notes", filteredNotes);
 
   function handleSearch(query: string) {
     setSearchQuery(query);
@@ -153,8 +152,9 @@ export default function NotesPage() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <h1 className="text-2xl sm:text-3xl font-bold">My Notes</h1>
+          <Header title="My Notes" />
+          
+          <div className="flex justify-end">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
@@ -172,7 +172,10 @@ export default function NotesPage() {
                     placeholder="Note title"
                     value={newNote.title}
                     onChange={(e) =>
-                      setNewNote((prev) => ({ ...prev, title: e.target.value }))
+                      setNewNote((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
                     }
                   />
                   <MarkdownEditor
