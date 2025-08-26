@@ -192,7 +192,7 @@ export default function NotePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-gray-900 dark:text-gray-100 bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none dark:prose-invert">
+                <div className="text-foreground bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none prose-neutral dark:prose-invert">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {note.content}
                   </ReactMarkdown>
