@@ -102,15 +102,15 @@ export default function NotesPage() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">My Notes</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">My Notes</h1>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">New Note</Button>
+              <Button variant="outline" className="w-full sm:w-auto">New Note</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[95vw] max-w-lg sm:max-w-xl">
               <DialogHeader>
-                <DialogTitle>Create New Note</DialogTitle>
+                <DialogTitle className="text-lg sm:text-xl">Create New Note</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 flex flex-col">
                 <Input
@@ -150,7 +150,7 @@ export default function NotesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {notes.map((note) => (
               <Card key={note.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -162,13 +162,13 @@ export default function NotesPage() {
                   <p className="text-muted-foreground line-clamp-3 mb-4">
                     {note.content.replace(/[#*_~`]/g, "").substring(0, 150)}...
                   </p>
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <span className="text-sm text-muted-foreground">
                       {new Date(note.updatedAt).toLocaleDateString()}
                     </span>
-                    <div className="space-x-2">
-                      <Link href={`/notes/${note.id}`}>
-                        <Button variant="secondary" size="sm">
+                    <div className="flex gap-2 sm:space-x-2">
+                      <Link href={`/notes/${note.id}`} className="flex-1 sm:flex-none">
+                        <Button variant="secondary" size="sm" className="w-full sm:w-auto">
                           View
                         </Button>
                       </Link>
@@ -176,6 +176,7 @@ export default function NotesPage() {
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteNote(note.id)}
+                        className="flex-1 sm:flex-none"
                       >
                         Delete
                       </Button>

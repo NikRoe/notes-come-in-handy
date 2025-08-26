@@ -20,7 +20,7 @@ export function MarkdownEditor({ value, onChange, placeholder = "Write your note
         <Button
           variant={activeTab === 'write' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('write')}
-          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary flex-1 sm:flex-none"
           size="sm"
         >
           Write
@@ -28,7 +28,7 @@ export function MarkdownEditor({ value, onChange, placeholder = "Write your note
         <Button
           variant={activeTab === 'preview' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('preview')}
-          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary flex-1 sm:flex-none"
           size="sm"
         >
           Preview

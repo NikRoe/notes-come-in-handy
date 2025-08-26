@@ -109,26 +109,26 @@ export default function NotePage() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <Link href="/notes">
-            <Button variant="outline">← Back to Notes</Button>
+            <Button variant="outline" className="w-fit">← Back to Notes</Button>
           </Link>
-          <div className="space-x-2">
+          <div className="flex flex-wrap gap-2 sm:space-x-2">
             {isEditing ? (
               <>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1 sm:flex-none">
                   Cancel
                 </Button>
-                <Button variant="outline" onClick={saveNote}>
+                <Button variant="outline" onClick={saveNote} className="flex-1 sm:flex-none">
                   Save
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={startEditing}>
+                <Button variant="outline" onClick={startEditing} className="flex-1 sm:flex-none">
                   Edit
                 </Button>
-                <Button variant="destructive" onClick={deleteNote}>
+                <Button variant="destructive" onClick={deleteNote} className="flex-1 sm:flex-none">
                   Delete
                 </Button>
               </>
