@@ -4,10 +4,11 @@ import { OfflineStatus } from "@/components/OfflineStatus";
 interface HeaderProps {
   title: string;
   className?: string;
-  syncStatus?: 'synced' | 'pending';
+  syncStatus?: "synced" | "pending";
 }
 
 export function Header({ title, className = "", syncStatus }: HeaderProps) {
+  console.log("syncStatus: ", syncStatus);
   return (
     <div
       className={`flex justify-around sm:flex-row sm:justify-between sm:items-center gap-4 ${className}`}

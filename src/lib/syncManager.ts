@@ -5,16 +5,25 @@ export class SyncManager {
   private syncInProgress = false;
   private retryTimeouts = new Map<string, NodeJS.Timeout>();
 
+  isSyncInProgress(): boolean {
+    return this.syncInProgress;
+  }
+
   async syncNotes(): Promise<void> {
     if (this.syncInProgress || !navigator.onLine) {
       return;
     }
 
-    this.syncInProgress = true;
-    console.log('Starting sync process...');
-
     try {
       const pendingOperations = await offlineStorage.getPendingOperations();
+      
+      if (pendingOperations.length === 0) {
+        console.log('No pending operations to sync');
+        return;
+      }
+
+      this.syncInProgress = true;
+      console.log(`Starting sync process... (${pendingOperations.length} operations)`);
       
       for (const operation of pendingOperations.sort((a, b) => a.timestamp - b.timestamp)) {
         await this.syncOperation(operation);
@@ -83,6 +92,16 @@ export class SyncManager {
         } else {
           await offlineStorage.deleteNote(operation.noteId);
         }
+      } else if (response.status === 404 && operation.type === 'delete') {
+        // Note already deleted, mark as synced
+        console.log(`Note ${operation.noteId} already deleted on server`);
+        await offlineStorage.markOperationSynced(operation.id);
+        await offlineStorage.deleteNote(operation.noteId);
+      } else if (response.status === 404 && operation.type === 'update') {
+        // Note doesn't exist on server anymore, mark as synced to stop retrying
+        console.log(`Note ${operation.noteId} no longer exists on server`);
+        await offlineStorage.markOperationSynced(operation.id);
+        await offlineStorage.deleteNote(operation.noteId);
       } else if (response.status === 409) {
         await this.handleConflict(operation, await response.json());
       } else {

@@ -23,6 +23,7 @@ const fetcher = (url: string) => fetch(url).then((response) => response.json());
 export function useOfflineNotes(isAuthenticated: boolean) {
   const [isOnline, setIsOnline] = useState(true);
   const [offlineNotes, setOfflineNotes] = useState<OfflineNote[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const {
     data: onlineNotes = [],
@@ -57,7 +58,7 @@ export function useOfflineNotes(isAuthenticated: boolean) {
     if (isOnline && onlineNotes.length > 0) {
       syncOnlineNotesToOffline(onlineNotes);
     }
-  }, [isOnline, onlineNotes]);
+  }, [isOnline, onlineNotes]); // syncOnlineNotesToOffline is stable, no need to add to deps
 
   const loadOfflineNotes = async () => {
     try {
@@ -104,36 +105,45 @@ export function useOfflineNotes(isAuthenticated: boolean) {
     };
 
     try {
-      await offlineStorage.saveNote(newNote);
-      await syncManager.queueOperation('create', tempId, newNote);
-      await loadOfflineNotes();
-
       if (isOnline) {
-        const response = await fetch('/api/notes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: noteData.title,
-            content: noteData.content,
-            tagNames: noteData.tags
-          })
-        });
-
-        if (response.ok) {
-          const createdNote = await response.json();
-          await offlineStorage.deleteNote(tempId);
-          await offlineStorage.saveNote({
-            ...createdNote,
-            tags: createdNote.tags?.map(({ tag }: any) => tag.name) || [],
-            syncStatus: 'synced',
-            lastSyncAt: new Date().toISOString()
+        // Create directly on server when online
+        setIsSyncing(true);
+        try {
+          const response = await fetch('/api/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: noteData.title,
+              content: noteData.content,
+              tagNames: noteData.tags
+            })
           });
-          await loadOfflineNotes();
-          mutate('/api/notes');
+
+          if (response.ok) {
+            const createdNote = await response.json();
+            await offlineStorage.saveNote({
+              ...createdNote,
+              tags: createdNote.tags?.map((tagRelation: { tag: { name: string } }) => tagRelation.tag.name) || [],
+              syncStatus: 'synced',
+              lastSyncAt: new Date().toISOString()
+            });
+            await loadOfflineNotes();
+            mutate('/api/notes');
+          } else {
+            throw new Error(`Server error: ${response.status}`);
+          }
+        } finally {
+          setIsSyncing(false);
         }
+      } else {
+        // Save for later sync when offline
+        await offlineStorage.saveNote(newNote);
+        await syncManager.queueOperation('create', tempId, newNote);
+        await loadOfflineNotes();
       }
     } catch (error) {
       console.error('Failed to create note:', error);
+      setIsSyncing(false);
       throw error;
     }
   };
@@ -148,34 +158,43 @@ export function useOfflineNotes(isAuthenticated: boolean) {
     };
 
     try {
-      const existingNote = await offlineStorage.getNote(id);
-      if (existingNote) {
-        await offlineStorage.saveNote({ ...existingNote, ...updatedNote });
-        await syncManager.queueOperation('update', id, updatedNote);
-        await loadOfflineNotes();
-      }
-
       if (isOnline) {
-        const response = await fetch(`/api/notes/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: noteData.title,
-            content: noteData.content,
-            tagNames: noteData.tags
-          })
-        });
-
-        if (response.ok) {
-          const updated = await response.json();
-          await offlineStorage.saveNote({
-            ...updated,
-            tags: updated.tags?.map(({ tag }: any) => tag.name) || [],
-            syncStatus: 'synced',
-            lastSyncAt: new Date().toISOString()
+        // Update directly on server when online
+        setIsSyncing(true);
+        try {
+          const response = await fetch(`/api/notes/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: noteData.title,
+              content: noteData.content,
+              tagNames: noteData.tags
+            })
           });
+
+          if (response.ok) {
+            const updated = await response.json();
+            await offlineStorage.saveNote({
+              ...updated,
+              tags: updated.tags?.map((tagRelation: { tag: { name: string } }) => tagRelation.tag.name) || [],
+              syncStatus: 'synced',
+              lastSyncAt: new Date().toISOString()
+            });
+            await loadOfflineNotes();
+            mutate('/api/notes');
+          } else {
+            throw new Error(`Server error: ${response.status}`);
+          }
+        } finally {
+          setIsSyncing(false);
+        }
+      } else {
+        // Save for later sync when offline
+        const existingNote = await offlineStorage.getNote(id);
+        if (existingNote) {
+          await offlineStorage.saveNote({ ...existingNote, ...updatedNote });
+          await syncManager.queueOperation('update', id, updatedNote);
           await loadOfflineNotes();
-          mutate('/api/notes');
         }
       }
     } catch (error) {
@@ -186,18 +205,34 @@ export function useOfflineNotes(isAuthenticated: boolean) {
 
   const deleteNote = async (id: string) => {
     try {
-      await offlineStorage.deleteNote(id);
-      await syncManager.queueOperation('delete', id);
-      await loadOfflineNotes();
-
       if (isOnline) {
-        const response = await fetch(`/api/notes/${id}`, {
-          method: 'DELETE'
-        });
+        // Delete directly on server when online
+        setIsSyncing(true);
+        try {
+          const response = await fetch(`/api/notes/${id}`, {
+            method: 'DELETE'
+          });
 
-        if (response.ok) {
-          mutate('/api/notes');
+          if (response.ok) {
+            await offlineStorage.deleteNote(id);
+            await loadOfflineNotes();
+            mutate('/api/notes');
+          } else if (response.status === 404) {
+            // Note already deleted on server, just remove locally
+            await offlineStorage.deleteNote(id);
+            await loadOfflineNotes();
+            mutate('/api/notes');
+          } else {
+            throw new Error(`Server error: ${response.status}`);
+          }
+        } finally {
+          setIsSyncing(false);
         }
+      } else {
+        // Queue for later sync when offline
+        await offlineStorage.deleteNote(id);
+        await syncManager.queueOperation('delete', id);
+        await loadOfflineNotes();
       }
     } catch (error) {
       console.error('Failed to delete note:', error);
@@ -228,6 +263,6 @@ export function useOfflineNotes(isAuthenticated: boolean) {
     createNote,
     updateNote,
     deleteNote,
-    syncStatus: offlineNotes.some(note => note.syncStatus === 'pending') ? 'pending' as const : 'synced' as const
+    syncStatus: (isSyncing || offlineNotes.some(note => note.syncStatus === 'pending')) ? 'pending' as const : 'synced' as const
   };
 }
