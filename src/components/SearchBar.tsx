@@ -22,25 +22,40 @@ export function SearchBar({
   };
 
   return (
-    <div className="relative w-full max-w-md">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        type="text"
-        placeholder={placeholder}
-        value={searchQuery}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="pl-10 pr-10"
-      />
-      {searchQuery && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={clearSearch}
-          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
-        >
-          <X className="h-3 w-3" />
-        </Button>
-      )}
-    </div>
+    <section role="search" className="relative w-full max-w-md">
+      <form onSubmit={(e) => e.preventDefault()}>
+        <label htmlFor="search-input" className="sr-only">
+          Search notes by title or content
+        </label>
+        <Search 
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" 
+          aria-hidden="true"
+        />
+        <Input
+          id="search-input"
+          type="search"
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="pl-10 pr-10"
+          aria-describedby="search-help"
+        />
+        <span id="search-help" className="sr-only">
+          Search results will update as you type
+        </span>
+        {searchQuery && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearSearch}
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
+            aria-label="Clear search"
+          >
+            <X className="h-3 w-3" aria-hidden="true" />
+          </Button>
+        )}
+      </form>
+    </section>
   );
 }

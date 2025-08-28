@@ -125,11 +125,11 @@ export default function NotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <main className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         <Header title={note.title} className="mb-6" />
         
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6" aria-label="Note navigation and actions">
           <Link href="/notes">
             <Button variant="outline" className="w-fit">← Back to Notes</Button>
           </Link>
@@ -156,66 +156,78 @@ export default function NotePage() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            {isEditing ? (
-              <Input
-                value={editedNote.title}
-                onChange={(e) =>
-                  setEditedNote((prev) => ({ ...prev, title: e.target.value }))
-                }
-                className="text-2xl font-bold border-none p-0 focus-visible:ring-0"
-                placeholder="Note title"
-              />
-            ) : (
-              <CardTitle className="text-2xl">{note.title}</CardTitle>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isEditing ? (
-              <div className="space-y-4">
-                <MarkdownEditor
-                  value={editedNote.content}
-                  onChange={(content) =>
-                    setEditedNote((prev) => ({ ...prev, content }))
-                  }
-                  placeholder="Edit your note in Markdown..."
-                  rows={20}
-                />
-                <TagInput
-                  tags={editedNote.tags}
-                  onTagsChange={(tags) =>
-                    setEditedNote((prev) => ({ ...prev, tags }))
-                  }
-                  placeholder="Edit tags (press Enter to add)..."
-                />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-foreground bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none prose-neutral dark:prose-invert">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {note.content}
-                  </ReactMarkdown>
-                </div>
-                {note.tags && note.tags.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2 text-muted-foreground">Tags</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {note.tags.map(({ tag }) => (
-                        <Tag key={tag.id} name={tag.name} color={tag.color} />
-                      ))}
-                    </div>
+        <article>
+          <Card>
+            <CardHeader>
+              {isEditing ? (
+                <>
+                  <label htmlFor="note-title-edit" className="sr-only">Note title</label>
+                  <Input
+                    id="note-title-edit"
+                    value={editedNote.title}
+                    onChange={(e) =>
+                      setEditedNote((prev) => ({ ...prev, title: e.target.value }))
+                    }
+                    className="text-2xl font-bold border-none p-0 focus-visible:ring-0"
+                    placeholder="Note title"
+                  />
+                </>
+              ) : (
+                <CardTitle className="text-2xl">{note.title}</CardTitle>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isEditing ? (
+                <form className="space-y-4">
+                  <MarkdownEditor
+                    value={editedNote.content}
+                    onChange={(content) =>
+                      setEditedNote((prev) => ({ ...prev, content }))
+                    }
+                    placeholder="Edit your note in Markdown..."
+                    rows={20}
+                  />
+                  <TagInput
+                    tags={editedNote.tags}
+                    onTagsChange={(tags) =>
+                      setEditedNote((prev) => ({ ...prev, tags }))
+                    }
+                    placeholder="Edit tags (press Enter to add)..."
+                  />
+                </form>
+              ) : (
+                <>
+                  <div className="text-foreground bg-muted/20 p-4 rounded-md border prose prose-sm max-w-none prose-neutral dark:prose-invert" role="document">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {note.content}
+                    </ReactMarkdown>
                   </div>
-                )}
-              </div>
-            )}
-            <div className="text-sm text-muted-foreground border-t pt-4">
-              <p>Created: {new Date(note.createdAt).toLocaleString()}</p>
-              <p>Updated: {new Date(note.updatedAt).toLocaleString()}</p>
-            </div>
-          </CardContent>
-        </Card>
+                  {note.tags && note.tags.length > 0 && (
+                    <aside>
+                      <h2 className="text-sm font-medium mb-2 text-muted-foreground">Tags</h2>
+                      <ul className="flex flex-wrap gap-2">
+                        {note.tags.map(({ tag }) => (
+                          <li key={tag.id}>
+                            <Tag name={tag.name} color={tag.color} />
+                          </li>
+                        ))}
+                      </ul>
+                    </aside>
+                  )}
+                </>
+              )}
+              <footer className="text-sm text-muted-foreground border-t pt-4">
+                <dl>
+                  <dt className="sr-only">Created</dt>
+                  <dd>Created: <time dateTime={note.createdAt}>{new Date(note.createdAt).toLocaleString()}</time></dd>
+                  <dt className="sr-only">Updated</dt>
+                  <dd>Updated: <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleString()}</time></dd>
+                </dl>
+              </footer>
+            </CardContent>
+          </Card>
+        </article>
       </div>
-    </div>
+    </main>
   );
 }

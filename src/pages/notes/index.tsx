@@ -52,7 +52,7 @@ export default function NotesPage() {
     isOnline,
     createNote: createOfflineNote,
     deleteNote: deleteOfflineNote,
-    syncStatus
+    syncStatus,
   } = useOfflineNotes(isAuthenticated);
 
   const filteredNotes = useMemo(() => {
@@ -126,12 +126,12 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <main className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col gap-4 mb-6">
           <Header title="My Notes" syncStatus={syncStatus} />
-          
-          <div className="flex justify-end">
+
+          <div className="flex justify-end" aria-label="Note actions">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
@@ -208,7 +208,10 @@ export default function NotesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredNotes?.map((note) => (
-              <Card key={note.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={note.id}
+                className="justify-between hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <CardTitle className="text-lg line-clamp-2">
                     {note.title}
@@ -258,6 +261,6 @@ export default function NotesPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
