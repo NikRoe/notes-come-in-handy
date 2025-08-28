@@ -1,14 +1,16 @@
 import { offlineStorage, OfflineNote, OfflineOperation } from './offlineStorage';
 import { mutate } from 'swr';
 
+// Manages synchronization between offline storage and server
 export class SyncManager {
   private syncInProgress = false;
-  private retryTimeouts = new Map<string, NodeJS.Timeout>();
+  private retryTimeouts = new Map<string, NodeJS.Timeout>(); // Track retry attempts
 
   isSyncInProgress(): boolean {
     return this.syncInProgress;
   }
 
+  // Main sync function - processes all pending operations
   async syncNotes(): Promise<void> {
     if (this.syncInProgress || !navigator.onLine) {
       return;
@@ -23,10 +25,12 @@ export class SyncManager {
 
       this.syncInProgress = true;
       
+      // Process operations in chronological order to maintain data integrity
       for (const operation of pendingOperations.sort((a, b) => a.timestamp - b.timestamp)) {
         await this.syncOperation(operation);
       }
 
+      // Clean up completed operations and refresh UI data
       await offlineStorage.clearSyncedOperations();
       await mutate('/api/notes');
     } catch (error) {
@@ -36,10 +40,12 @@ export class SyncManager {
     }
   }
 
+  // Sync individual operation to server
   private async syncOperation(operation: OfflineOperation): Promise<void> {
     try {
       let response: Response;
 
+      // Convert offline operation to appropriate API call
       switch (operation.type) {
         case 'create':
           response = await fetch('/api/notes', {
@@ -75,10 +81,12 @@ export class SyncManager {
           throw new Error(`Unknown operation type: ${operation.type}`);
       }
 
+      // Handle different response scenarios
       if (response.ok) {
         await offlineStorage.markOperationSynced(operation.id);
         
         if (operation.type !== 'delete') {
+          // Update local storage with server response
           const syncedNote = await response.json();
           await offlineStorage.saveNote({
             ...syncedNote,
@@ -89,14 +97,15 @@ export class SyncManager {
           await offlineStorage.deleteNote(operation.noteId);
         }
       } else if (response.status === 404 && operation.type === 'delete') {
-        // Note already deleted, mark as synced
+        // Note already deleted on server, nothing to do
         await offlineStorage.markOperationSynced(operation.id);
         await offlineStorage.deleteNote(operation.noteId);
       } else if (response.status === 404 && operation.type === 'update') {
-        // Note doesn't exist on server anymore, mark as synced to stop retrying
+        // Note no longer exists on server, remove locally too
         await offlineStorage.markOperationSynced(operation.id);
         await offlineStorage.deleteNote(operation.noteId);
       } else if (response.status === 409) {
+        // Handle data conflicts
         await this.handleConflict(operation, await response.json());
       } else {
         throw new Error(`Server error: ${response.status}`);
@@ -107,14 +116,15 @@ export class SyncManager {
     }
   }
 
+  // Handle data conflicts between local and server versions
   private async handleConflict(operation: OfflineOperation, serverData: any): Promise<void> {
-    
     const localNote = await offlineStorage.getNote(operation.noteId);
     if (!localNote) return;
 
     const conflictResolution = await this.resolveConflict(localNote, serverData);
     
     if (conflictResolution.strategy === 'local') {
+      // Force local version to server
       const response = await fetch(`/api/notes/${operation.noteId}`, {
         method: 'PUT',
         headers: { 
@@ -137,6 +147,7 @@ export class SyncManager {
         });
       }
     } else {
+      // Accept server version
       await offlineStorage.saveNote({
         ...serverData,
         syncStatus: 'synced',
@@ -146,23 +157,22 @@ export class SyncManager {
     }
   }
 
+  // Simple conflict resolution: latest timestamp wins
   private async resolveConflict(localNote: OfflineNote, serverNote: any): Promise<{ strategy: 'local' | 'server' }> {
     const localTime = new Date(localNote.updatedAt).getTime();
     const serverTime = new Date(serverNote.updatedAt).getTime();
     
-    if (localTime > serverTime) {
-      return { strategy: 'local' };
-    } else {
-      return { strategy: 'server' };
-    }
+    return localTime > serverTime ? { strategy: 'local' } : { strategy: 'server' };
   }
 
+  // Schedule retry with exponential backoff for failed operations
   private scheduleRetry(operation: OfflineOperation): void {
     const existingTimeout = this.retryTimeouts.get(operation.id);
     if (existingTimeout) {
       clearTimeout(existingTimeout);
     }
 
+    // Exponential backoff: 1s, 2s, 4s, 8s... max 30s
     const retryDelay = Math.min(30000, Math.pow(2, this.getRetryCount(operation)) * 1000);
     
     const timeout = setTimeout(() => {
@@ -174,21 +184,25 @@ export class SyncManager {
   }
 
   private getRetryCount(operation: OfflineOperation): number {
-    return Math.floor((Date.now() - operation.timestamp) / 60000);
+    return Math.floor((Date.now() - operation.timestamp) / 60000); // Rough retry count based on age
   }
 
+  // Start automatic sync processes
   startPeriodicSync(): void {
+    // Sync every 30 seconds when online
     setInterval(() => {
       if (navigator.onLine) {
         this.syncNotes();
       }
-    }, 30000); // Sync every 30 seconds when online
+    }, 30000);
 
+    // Immediate sync when coming back online
     window.addEventListener('online', () => {
       this.syncNotes();
     });
   }
 
+  // Queue an operation for sync when back online
   async queueOperation(type: OfflineOperation['type'], noteId: string, data?: Partial<OfflineNote>): Promise<void> {
     const operation: OfflineOperation = {
       id: `${type}-${noteId}-${Date.now()}`,
@@ -201,6 +215,7 @@ export class SyncManager {
 
     await offlineStorage.addOperation(operation);
     
+    // Try to sync immediately if online
     if (navigator.onLine) {
       setTimeout(() => this.syncNotes(), 1000);
     }

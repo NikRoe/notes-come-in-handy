@@ -1,3 +1,4 @@
+// Cache names for different types of content
 const CACHE_NAME = 'notes-app-v1';
 const urlsToCache = [
   '/',
@@ -8,20 +9,20 @@ const urlsToCache = [
 const API_CACHE_NAME = 'api-cache-v1';
 const API_URLS = ['/api/notes', '/api/auth'];
 
+// Service worker installation - pre-cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(async (cache) => {
         console.log('Opened cache');
         
-        // Cache URLs one by one with error handling
+        // Cache URLs individually to avoid failing entire batch if one URL fails
         const cachePromises = urlsToCache.map(async (url) => {
           try {
             await cache.add(url);
             console.log(`Successfully cached: ${url}`);
           } catch (error) {
             console.warn(`Failed to cache ${url}:`, error);
-            // Continue with other URLs even if one fails
           }
         });
         
@@ -34,16 +35,19 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Handle all network requests
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   if (request.method === 'GET') {
     if (url.pathname.startsWith('/api/notes')) {
+      // API requests: try network first, fall back to cache
       event.respondWith(
         fetch(request)
           .then((response) => {
             if (response.status === 200) {
+              // Cache successful API responses
               const responseClone = response.clone();
               caches.open(API_CACHE_NAME).then((cache) => {
                 cache.put(request, responseClone);
@@ -52,6 +56,7 @@ self.addEventListener('fetch', (event) => {
             return response;
           })
           .catch(() => {
+            // Network failed, try cache
             return caches.match(request).then((cachedResponse) => {
               if (cachedResponse) {
                 return cachedResponse;
@@ -68,6 +73,7 @@ self.addEventListener('fetch', (event) => {
           })
       );
     } else {
+      // Static assets: try cache first, fall back to network
       event.respondWith(
         caches.match(request)
           .then((response) => {
@@ -79,15 +85,18 @@ self.addEventListener('fetch', (event) => {
       );
     }
   } else if (['POST', 'PUT', 'DELETE'].includes(request.method) && url.pathname.startsWith('/api/notes')) {
+    // Write operations: try network, queue for sync if offline
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response.ok) {
+            // Clear API cache when data changes
             caches.delete(API_CACHE_NAME);
           }
           return response;
         })
         .catch((error) => {
+          // Network failed, store request for later sync
           console.log('API request failed, storing for sync:', request.method, request.url);
           return storeOfflineRequest(request);
         })
@@ -95,9 +104,10 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+// Store failed requests for later sync when back online
 async function storeOfflineRequest(request) {
   try {
-    // Use IndexedDB instead of localStorage in service worker
+    // Create a serializable representation of the request
     const requestData = {
       id: `request-${Date.now()}-${Math.random()}`,
       url: request.url,
@@ -107,7 +117,7 @@ async function storeOfflineRequest(request) {
       timestamp: Date.now()
     };
     
-    // Store in IndexedDB (will be handled by the sync manager)
+    // Log for debugging (actual storage handled by sync manager)
     console.log('Offline request stored:', requestData);
     
     return new Response(
@@ -139,11 +149,13 @@ async function storeOfflineRequest(request) {
   }
 }
 
+// Clean up old caches when service worker updates
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
+          // Delete any caches that don't match current version
           if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
             return caches.delete(cacheName);
           }

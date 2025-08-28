@@ -1,3 +1,4 @@
+// Local storage schema for offline notes
 export interface OfflineNote {
   id: string;
   title: string;
@@ -9,6 +10,7 @@ export interface OfflineNote {
   lastSyncAt?: string;
 }
 
+// Queue of operations to sync when back online
 export interface OfflineOperation {
   id: string;
   type: 'create' | 'update' | 'delete';
@@ -18,11 +20,13 @@ export interface OfflineOperation {
   synced: boolean;
 }
 
+// IndexedDB wrapper for offline data storage
 class OfflineStorage {
   private dbName = 'NotesOfflineDB';
   private version = 1;
   private db: IDBDatabase | null = null;
 
+  // Initialize IndexedDB database with notes and operations stores
   async init(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
@@ -33,15 +37,18 @@ class OfflineStorage {
         resolve();
       };
 
+      // Create database schema on first run or version upgrade
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
 
+        // Store for notes with indexes for querying
         if (!db.objectStoreNames.contains('notes')) {
           const notesStore = db.createObjectStore('notes', { keyPath: 'id' });
           notesStore.createIndex('syncStatus', 'syncStatus', { unique: false });
           notesStore.createIndex('updatedAt', 'updatedAt', { unique: false });
         }
 
+        // Store for pending sync operations
         if (!db.objectStoreNames.contains('operations')) {
           const operationsStore = db.createObjectStore('operations', { keyPath: 'id' });
           operationsStore.createIndex('synced', 'synced', { unique: false });
@@ -120,6 +127,7 @@ class OfflineStorage {
     });
   }
 
+  // Get operations that still need to be synced to server
   async getPendingOperations(): Promise<OfflineOperation[]> {
     if (!this.db) await this.init();
     
@@ -127,7 +135,7 @@ class OfflineStorage {
       const transaction = this.db!.transaction(['operations'], 'readonly');
       const store = transaction.objectStore('operations');
       
-      // Use cursor instead of index with boolean value
+      // Use cursor to filter unsynced operations (boolean indexes can be unreliable)
       const request = store.openCursor();
       const results: OfflineOperation[] = [];
       
@@ -170,6 +178,7 @@ class OfflineStorage {
     });
   }
 
+  // Clean up operations that have been successfully synced
   async clearSyncedOperations(): Promise<void> {
     if (!this.db) await this.init();
     
@@ -183,7 +192,7 @@ class OfflineStorage {
         if (cursor) {
           const operation = cursor.value;
           if (operation.synced === true) {
-            cursor.delete();
+            cursor.delete(); // Remove synced operations to prevent buildup
           }
           cursor.continue();
         } else {
