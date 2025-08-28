@@ -12,12 +12,12 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import useSWR, { mutate } from "swr";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { SearchBar } from "@/components/SearchBar";
 import { TagInput } from "@/components/TagInput";
 import { Tag } from "@/components/Tag";
 import { Header } from "@/components/Header";
+import { useOfflineNotes } from "@/hooks/useOfflineNotes";
 
 interface Note {
   id: string;
@@ -34,8 +34,6 @@ interface Note {
   }[];
 }
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json());
-
 export default function NotesPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -48,10 +46,14 @@ export default function NotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const {
-    data: notes = [],
+    notes,
     error,
     isValidating,
-  } = useSWR<Note[]>(isAuthenticated ? "/api/notes" : null, fetcher);
+    isOnline,
+    createNote: createOfflineNote,
+    deleteNote: deleteOfflineNote,
+    syncStatus
+  } = useOfflineNotes(isAuthenticated);
 
   const filteredNotes = useMemo(() => {
     if (error || !Array.isArray(notes)) return [];
@@ -78,25 +80,13 @@ export default function NotesPage() {
     if (!newNote.title.trim() || !newNote.content.trim()) return;
 
     try {
-      const response = await fetch("/api/notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newNote.title,
-          content: newNote.content,
-          tagNames: newNote.tags,
-        }),
+      await createOfflineNote({
+        title: newNote.title,
+        content: newNote.content,
+        tags: newNote.tags,
       });
-
-      if (response.ok) {
-        const createdNote = await response.json();
-        // Optimistic update
-        mutate("/api/notes", [createdNote, ...notes], false);
-        setNewNote({ title: "", content: "", tags: [] });
-        setIsDialogOpen(false);
-        // Revalidate to ensure consistency
-        mutate("/api/notes");
-      }
+      setNewNote({ title: "", content: "", tags: [] });
+      setIsDialogOpen(false);
     } catch (error) {
       console.error("Failed to create note:", error);
     }
@@ -104,20 +94,7 @@ export default function NotesPage() {
 
   const deleteNote = async (id: string) => {
     try {
-      const response = await fetch(`/api/notes/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        // Optimistic update
-        mutate(
-          "/api/notes",
-          notes.filter((note) => note.id !== id),
-          false
-        );
-        // Revalidate to ensure consistency
-        mutate("/api/notes");
-      }
+      await deleteOfflineNote(id);
     } catch (error) {
       console.error("Failed to delete note:", error);
     }
@@ -152,7 +129,7 @@ export default function NotesPage() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col gap-4 mb-6">
-          <Header title="My Notes" />
+          <Header title="My Notes" syncStatus={syncStatus} />
           
           <div className="flex justify-end">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

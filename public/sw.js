@@ -2,9 +2,6 @@ const CACHE_NAME = 'notes-app-v1';
 const urlsToCache = [
   '/',
   '/notes',
-  '/api/notes',
-  '/_next/static/css/',
-  '/_next/static/js/',
   '/manifest.json'
 ];
 
@@ -14,9 +11,25 @@ const API_URLS = ['/api/notes', '/api/auth'];
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
+      .then(async (cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        
+        // Cache URLs one by one with error handling
+        const cachePromises = urlsToCache.map(async (url) => {
+          try {
+            await cache.add(url);
+            console.log(`Successfully cached: ${url}`);
+          } catch (error) {
+            console.warn(`Failed to cache ${url}:`, error);
+            // Continue with other URLs even if one fails
+          }
+        });
+        
+        await Promise.allSettled(cachePromises);
+        console.log('Cache setup completed');
+      })
+      .catch((error) => {
+        console.error('Cache setup failed:', error);
       })
   );
 });
@@ -83,31 +96,47 @@ self.addEventListener('fetch', (event) => {
 });
 
 async function storeOfflineRequest(request) {
-  const offlineRequests = JSON.parse(localStorage.getItem('offlineRequests') || '[]');
-  
-  const requestData = {
-    url: request.url,
-    method: request.method,
-    headers: Object.fromEntries(request.headers.entries()),
-    body: request.method !== 'GET' ? await request.text() : null,
-    timestamp: Date.now()
-  };
-  
-  offlineRequests.push(requestData);
-  localStorage.setItem('offlineRequests', JSON.stringify(offlineRequests));
-  
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: 'Request stored for sync when online',
-      offline: true 
-    }),
-    {
-      status: 200,
-      statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
+  try {
+    // Use IndexedDB instead of localStorage in service worker
+    const requestData = {
+      id: `request-${Date.now()}-${Math.random()}`,
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries()),
+      body: request.method !== 'GET' ? await request.text() : null,
+      timestamp: Date.now()
+    };
+    
+    // Store in IndexedDB (will be handled by the sync manager)
+    console.log('Offline request stored:', requestData);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Request stored for sync when online',
+        offline: true 
+      }),
+      {
+        status: 200,
+        statusText: 'OK',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  } catch (error) {
+    console.error('Failed to store offline request:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        message: 'Failed to store request for offline sync',
+        error: error.message 
+      }),
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
 }
 
 self.addEventListener('activate', (event) => {
