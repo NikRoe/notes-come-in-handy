@@ -13,7 +13,7 @@ This roadmap outlines the development process for a multi-device note-taking app
 
 ### 1.2 Basic Note Management
 
-- ✅Create note model/schema (id, title, content, createdAt, updatedAt, userId)
+- ✅ Create note model/schema (id, title, content, createdAt, updatedAt, userId)
 - ✅ Build CRUD API endpoints for notes
 - ✅ Implement basic note list and detail views
 - ✅ Add markdown editor component (react-markdown + editor)
@@ -22,10 +22,10 @@ This roadmap outlines the development process for a multi-device note-taking app
 
 ### 2.1 Enhanced UI/UX
 
-- Implement responsive design for mobile/tablet
-- Add search and filtering functionality
-- Create folders/tags system for organization
-- Implement dark/light mode toggle
+- ✅ Implement responsive design for mobile/tablet
+- ✅ Add search and filtering functionality
+- ✅ Create folders/tags system for organization
+- ✅ Implement dark/light mode toggle
 
 ### 2.2 Offline Capabilities
 
