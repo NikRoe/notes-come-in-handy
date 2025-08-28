@@ -18,12 +18,10 @@ export class SyncManager {
       const pendingOperations = await offlineStorage.getPendingOperations();
       
       if (pendingOperations.length === 0) {
-        console.log('No pending operations to sync');
         return;
       }
 
       this.syncInProgress = true;
-      console.log(`Starting sync process... (${pendingOperations.length} operations)`);
       
       for (const operation of pendingOperations.sort((a, b) => a.timestamp - b.timestamp)) {
         await this.syncOperation(operation);
@@ -31,8 +29,6 @@ export class SyncManager {
 
       await offlineStorage.clearSyncedOperations();
       await mutate('/api/notes');
-      
-      console.log('Sync completed successfully');
     } catch (error) {
       console.error('Sync failed:', error);
     } finally {
@@ -94,12 +90,10 @@ export class SyncManager {
         }
       } else if (response.status === 404 && operation.type === 'delete') {
         // Note already deleted, mark as synced
-        console.log(`Note ${operation.noteId} already deleted on server`);
         await offlineStorage.markOperationSynced(operation.id);
         await offlineStorage.deleteNote(operation.noteId);
       } else if (response.status === 404 && operation.type === 'update') {
         // Note doesn't exist on server anymore, mark as synced to stop retrying
-        console.log(`Note ${operation.noteId} no longer exists on server`);
         await offlineStorage.markOperationSynced(operation.id);
         await offlineStorage.deleteNote(operation.noteId);
       } else if (response.status === 409) {
@@ -114,7 +108,6 @@ export class SyncManager {
   }
 
   private async handleConflict(operation: OfflineOperation, serverData: any): Promise<void> {
-    console.log('Conflict detected for operation:', operation.id);
     
     const localNote = await offlineStorage.getNote(operation.noteId);
     if (!localNote) return;
@@ -192,7 +185,6 @@ export class SyncManager {
     }, 30000); // Sync every 30 seconds when online
 
     window.addEventListener('online', () => {
-      console.log('Back online, starting sync...');
       this.syncNotes();
     });
   }

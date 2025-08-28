@@ -71,6 +71,14 @@ export function useOfflineNotes(isAuthenticated: boolean) {
 
   const syncOnlineNotesToOffline = async (notes: Note[]) => {
     try {
+      // Clean up old temp notes first
+      const allOfflineNotes = await offlineStorage.getAllNotes();
+      for (const offlineNote of allOfflineNotes) {
+        if (offlineNote.id.startsWith('temp-')) {
+          await offlineStorage.deleteNote(offlineNote.id);
+        }
+      }
+      
       for (const note of notes) {
         const offlineNote: OfflineNote = {
           id: note.id,
@@ -79,7 +87,7 @@ export function useOfflineNotes(isAuthenticated: boolean) {
           tags: note.tags.map(({ tag }) => tag.name),
           createdAt: note.createdAt,
           updatedAt: note.updatedAt,
-          syncStatus: 'synced',
+          syncStatus: 'synced', // Always mark as synced since they come from server
           lastSyncAt: new Date().toISOString()
         };
         

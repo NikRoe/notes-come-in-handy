@@ -8,7 +8,6 @@ interface HeaderProps {
 }
 
 export function Header({ title, className = "", syncStatus }: HeaderProps) {
-  console.log("syncStatus: ", syncStatus);
   return (
     <div
       className={`flex justify-around sm:flex-row sm:justify-between sm:items-center gap-4 ${className}`}

@@ -60,8 +60,7 @@ class OfflineStorage {
       
       const request = store.put({
         ...note,
-        updatedAt: new Date().toISOString(),
-        syncStatus: 'pending'
+        updatedAt: note.updatedAt || new Date().toISOString()
       });
       
       request.onsuccess = () => resolve();
