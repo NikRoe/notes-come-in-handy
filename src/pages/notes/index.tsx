@@ -232,7 +232,7 @@ export default function NotesPage() {
                     <span className="text-sm text-muted-foreground">
                       {new Date(note.updatedAt).toLocaleDateString()}
                     </span>
-                    <div className="flex gap-2 sm:space-x-2">
+                    <div className="flex gap-2 min-w-0">
                       <Link
                         href={`/notes/${note.id}`}
                         className="flex-1 sm:flex-none"
@@ -240,7 +240,7 @@ export default function NotesPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="w-full sm:w-auto"
+                          className="w-full sm:w-auto text-xs px-2"
                         >
                           View
                         </Button>
@@ -249,7 +249,7 @@ export default function NotesPage() {
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteNote(note.id)}
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none text-xs px-2"
                       >
                         Delete
                       </Button>
