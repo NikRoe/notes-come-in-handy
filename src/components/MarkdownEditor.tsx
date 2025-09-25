@@ -21,6 +21,7 @@ export function MarkdownEditor({ value, onChange, placeholder = "Write your note
         <div role="tablist" className="flex border-b mb-4" aria-label="Editor modes">
           <Button
             role="tab"
+            type="button"
             aria-selected={activeTab === 'write'}
             aria-controls="editor-panel"
             variant={activeTab === 'write' ? 'default' : 'ghost'}
@@ -33,6 +34,7 @@ export function MarkdownEditor({ value, onChange, placeholder = "Write your note
           </Button>
           <Button
             role="tab"
+            type="button"
             aria-selected={activeTab === 'preview'}
             aria-controls="editor-panel"
             variant={activeTab === 'preview' ? 'default' : 'ghost'}
