@@ -17,17 +17,24 @@ export class SyncManager {
     }
 
     try {
+      this.syncInProgress = true;
+      
+      // Get fresh pending operations each time to avoid duplicates
       const pendingOperations = await offlineStorage.getPendingOperations();
       
       if (pendingOperations.length === 0) {
         return;
       }
 
-      this.syncInProgress = true;
+      console.log(`Syncing ${pendingOperations.length} operations`);
       
       // Process operations in chronological order to maintain data integrity
       for (const operation of pendingOperations.sort((a, b) => a.timestamp - b.timestamp)) {
-        await this.syncOperation(operation);
+        // Double-check operation wasn't already synced by another process
+        const currentOp = await offlineStorage.getOperation(operation.id);
+        if (currentOp && !currentOp.synced) {
+          await this.syncOperation(operation);
+        }
       }
 
       // Clean up completed operations and refresh UI data
@@ -88,8 +95,15 @@ export class SyncManager {
         if (operation.type !== 'delete') {
           // Update local storage with server response
           const syncedNote = await response.json();
+          
+          // If this was a temp note, delete the old temp version first
+          if (operation.noteId.startsWith('temp-')) {
+            await offlineStorage.deleteNote(operation.noteId);
+          }
+          
           await offlineStorage.saveNote({
             ...syncedNote,
+            tags: syncedNote.tags?.map((tagRelation: { tag: { name: string } }) => tagRelation.tag.name) || [],
             syncStatus: 'synced',
             lastSyncAt: new Date().toISOString()
           });
@@ -215,9 +229,9 @@ export class SyncManager {
 
     await offlineStorage.addOperation(operation);
     
-    // Try to sync immediately if online
+    // Try to sync immediately if online (with small delay to batch operations)
     if (navigator.onLine) {
-      setTimeout(() => this.syncNotes(), 1000);
+      setTimeout(() => this.syncNotes(), 2000);
     }
   }
 }

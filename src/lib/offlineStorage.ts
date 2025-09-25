@@ -127,6 +127,19 @@ class OfflineStorage {
     });
   }
 
+  async getOperation(id: string): Promise<OfflineOperation | null> {
+    if (!this.db) await this.init();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['operations'], 'readonly');
+      const store = transaction.objectStore('operations');
+      const request = store.get(id);
+      
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // Get operations that still need to be synced to server
   async getPendingOperations(): Promise<OfflineOperation[]> {
     if (!this.db) await this.init();
