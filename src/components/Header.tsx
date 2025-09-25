@@ -1,5 +1,7 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { OfflineStatus } from "@/components/OfflineStatus";
+import { Button } from "@/components/ui/button";
+import { signOut } from "next-auth/react";
 
 interface HeaderProps {
   title: string;
@@ -16,6 +18,13 @@ export function Header({ title, className = "", syncStatus }: HeaderProps) {
       <aside className="flex items-center gap-2" aria-label="App status and settings">
         <OfflineStatus syncStatus={syncStatus} />
         <ThemeToggle />
+        <Button 
+          onClick={() => signOut()} 
+          variant="outline"
+          size="sm"
+        >
+          Sign Out
+        </Button>
       </aside>
     </header>
   );
