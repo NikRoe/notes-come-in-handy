@@ -46,6 +46,14 @@ export default function SignIn({ providers }: SignInProps) {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
+    // Debug environment variables
+    console.log('Environment check:', {
+      hasGithubId: !!process.env.GITHUB_CLIENT_ID,
+      hasGithubSecret: !!process.env.GITHUB_CLIENT_SECRET,
+      hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+      hasDatabaseUrl: !!process.env.DATABASE_URL
+    });
+
     const session = await getServerSession(context.req, context.res, authOptions);
 
     if (session) {
@@ -60,9 +68,24 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const providers = await getProviders();
     console.log('Providers fetched:', providers);
 
+    // If getProviders returns null or empty, return manual fallback
+    if (!providers || Object.keys(providers).length === 0) {
+      console.log('No providers found, using fallback');
+      return {
+        props: {
+          providers: {
+            github: {
+              id: 'github',
+              name: 'GitHub',
+            }
+          },
+        },
+      };
+    }
+
     return {
       props: {
-        providers: providers ?? {},
+        providers,
       },
     };
   } catch (error) {
