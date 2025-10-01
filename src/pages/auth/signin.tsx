@@ -15,6 +15,8 @@ interface SignInProps {
 }
 
 export default function SignIn({ providers }: SignInProps) {
+  console.log('SignIn component providers:', providers);
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -22,16 +24,20 @@ export default function SignIn({ providers }: SignInProps) {
           <CardTitle className="text-2xl">Sign in to Notes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {Object.values(providers).map((provider) => (
-            <Button
-              key={provider.name}
-              onClick={() => signIn(provider.id)}
-              className="w-full"
-              variant="default"
-            >
-              Sign in with {provider.name}
-            </Button>
-          ))}
+          {!providers || Object.keys(providers).length === 0 ? (
+            <p className="text-center text-muted-foreground">No providers available</p>
+          ) : (
+            Object.values(providers).map((provider) => (
+              <Button
+                key={provider.name}
+                onClick={() => signIn(provider.id)}
+                className="w-full"
+                variant="default"
+              >
+                Sign in with {provider.name}
+              </Button>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>
@@ -39,22 +45,39 @@ export default function SignIn({ providers }: SignInProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getServerSession(context.req, context.res, authOptions);
+  try {
+    const session = await getServerSession(context.req, context.res, authOptions);
 
-  if (session) {
+    if (session) {
+      return {
+        redirect: {
+          destination: "/",
+          permanent: false,
+        },
+      };
+    }
+
+    const providers = await getProviders();
+    console.log('Providers fetched:', providers);
+
     return {
-      redirect: {
-        destination: "/",
-        permanent: false,
+      props: {
+        providers: providers ?? {},
+      },
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    
+    // Fallback: return GitHub provider manually if getProviders fails
+    return {
+      props: {
+        providers: {
+          github: {
+            id: 'github',
+            name: 'GitHub',
+          }
+        },
       },
     };
   }
-
-  const providers = await getProviders();
-
-  return {
-    props: {
-      providers: providers ?? {},
-    },
-  };
 };
