@@ -28,10 +28,10 @@ export default async function handler(
           include: {
             tags: {
               include: {
-                tag: true
-              }
-            }
-          }
+                tag: true,
+              },
+            },
+          },
         });
 
         if (!note) {
@@ -40,7 +40,7 @@ export default async function handler(
 
         response.status(200).json(note);
       } catch (error) {
-        response.status(500).json({ error: "Failed to fetch note" });
+        response.status(500).json({ error });
       }
       break;
 
@@ -103,7 +103,7 @@ export default async function handler(
 
         response.status(200).json(updatedNote);
       } catch (error) {
-        response.status(500).json({ error: "Failed to update note" });
+        response.status(500).json({ error });
       }
       break;
 
@@ -119,7 +119,7 @@ export default async function handler(
 
         response.status(200).json({ message: "Note deleted successfully" });
       } catch (error) {
-        response.status(500).json({ error: "Failed to delete note" });
+        response.status(500).json({ error });
       }
       break;
 

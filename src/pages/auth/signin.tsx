@@ -1,12 +1,17 @@
-import { GetServerSideProps } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { getProviders, signIn } from 'next-auth/react'
-import { authOptions } from '../../lib/auth'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { GetServerSideProps } from "next";
+import { getServerSession } from "next-auth/next";
+import { getProviders, signIn } from "next-auth/react";
+import { authOptions } from "../../lib/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Provider {
+  name: string;
+  id: string;
+}
 
 interface SignInProps {
-  providers: any
+  providers: Provider[];
 }
 
 export default function SignIn({ providers }: SignInProps) {
@@ -17,7 +22,7 @@ export default function SignIn({ providers }: SignInProps) {
           <CardTitle className="text-2xl">Sign in to Notes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {Object.values(providers).map((provider: any) => (
+          {Object.values(providers).map((provider) => (
             <Button
               key={provider.name}
               onClick={() => signIn(provider.id)}
@@ -30,26 +35,26 @@ export default function SignIn({ providers }: SignInProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getServerSession(context.req, context.res, authOptions)
+  const session = await getServerSession(context.req, context.res, authOptions);
 
   if (session) {
     return {
       redirect: {
-        destination: '/',
+        destination: "/",
         permanent: false,
       },
-    }
+    };
   }
 
-  const providers = await getProviders()
+  const providers = await getProviders();
 
   return {
     props: {
       providers: providers ?? {},
     },
-  }
-}
+  };
+};

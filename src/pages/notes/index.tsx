@@ -19,23 +19,8 @@ import { Tag } from "@/components/Tag";
 import { Header } from "@/components/Header";
 import { useOfflineNotes } from "@/hooks/useOfflineNotes";
 
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  tags: {
-    tag: {
-      id: string;
-      name: string;
-      color: string;
-    };
-  }[];
-}
-
 export default function NotesPage() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newNote, setNewNote] = useState({
@@ -48,8 +33,6 @@ export default function NotesPage() {
   const {
     notes,
     error,
-    isValidating,
-    isOnline,
     createNote: createOfflineNote,
     deleteNote: deleteOfflineNote,
     syncStatus,
