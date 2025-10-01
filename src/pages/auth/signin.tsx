@@ -15,8 +15,6 @@ interface SignInProps {
 }
 
 export default function SignIn({ providers }: SignInProps) {
-  console.log('SignIn component providers:', providers);
-  
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -24,20 +22,16 @@ export default function SignIn({ providers }: SignInProps) {
           <CardTitle className="text-2xl">Sign in to Notes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!providers || Object.keys(providers).length === 0 ? (
-            <p className="text-center text-muted-foreground">No providers available</p>
-          ) : (
-            Object.values(providers).map((provider) => (
-              <Button
-                key={provider.name}
-                onClick={() => signIn(provider.id)}
-                className="w-full"
-                variant="default"
-              >
-                Sign in with {provider.name}
-              </Button>
-            ))
-          )}
+          {Object.values(providers).map((provider) => (
+            <Button
+              key={provider.name}
+              onClick={() => signIn(provider.id)}
+              className="w-full"
+              variant="default"
+            >
+              Sign in with {provider.name}
+            </Button>
+          ))}
         </CardContent>
       </Card>
     </div>
@@ -45,62 +39,22 @@ export default function SignIn({ providers }: SignInProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    // Debug environment variables
-    console.log('Environment check:', {
-      hasGithubId: !!process.env.GITHUB_CLIENT_ID,
-      hasGithubSecret: !!process.env.GITHUB_CLIENT_SECRET,
-      hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
-      hasDatabaseUrl: !!process.env.DATABASE_URL
-    });
+  const session = await getServerSession(context.req, context.res, authOptions);
 
-    const session = await getServerSession(context.req, context.res, authOptions);
-
-    if (session) {
-      return {
-        redirect: {
-          destination: "/",
-          permanent: false,
-        },
-      };
-    }
-
-    const providers = await getProviders();
-    console.log('Providers fetched:', providers);
-
-    // If getProviders returns null or empty, return manual fallback
-    if (!providers || Object.keys(providers).length === 0) {
-      console.log('No providers found, using fallback');
-      return {
-        props: {
-          providers: {
-            github: {
-              id: 'github',
-              name: 'GitHub',
-            }
-          },
-        },
-      };
-    }
-
+  if (session) {
     return {
-      props: {
-        providers,
-      },
-    };
-  } catch (error) {
-    console.error('Error in getServerSideProps:', error);
-    
-    // Fallback: return GitHub provider manually if getProviders fails
-    return {
-      props: {
-        providers: {
-          github: {
-            id: 'github',
-            name: 'GitHub',
-          }
-        },
+      redirect: {
+        destination: "/",
+        permanent: false,
       },
     };
   }
+
+  const providers = await getProviders();
+
+  return {
+    props: {
+      providers: providers ?? {},
+    },
+  };
 };
