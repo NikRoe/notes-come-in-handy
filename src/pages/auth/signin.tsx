@@ -11,7 +11,7 @@ interface Provider {
 }
 
 interface SignInProps {
-  providers: Provider[];
+  providers: Record<string, Provider>;
 }
 
 export default function SignIn({ providers }: SignInProps) {
