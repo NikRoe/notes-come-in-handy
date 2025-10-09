@@ -12,7 +12,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/notes');
+      router.push("/notes");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -46,10 +46,12 @@ export default function Home() {
                     className="w-10 h-10 rounded-full"
                   />
                 )}
-                <span className="text-sm text-muted-foreground">{user?.email}</span>
+                <span className="text-sm text-muted-foreground">
+                  {user?.email}
+                </span>
               </div>
-              <Button 
-                onClick={() => signOut()} 
+              <Button
+                onClick={() => signOut()}
                 variant="destructive"
                 className="w-full"
               >
@@ -61,11 +63,8 @@ export default function Home() {
               <p className="text-lg text-muted-foreground">
                 Sign in to access your notes
               </p>
-              <Button 
-                onClick={() => signIn()} 
-                className="w-full"
-              >
-                Sign In
+              <Button onClick={() => signIn("github")} className="w-full">
+                Sign In using GitHub
               </Button>
             </div>
           )}
